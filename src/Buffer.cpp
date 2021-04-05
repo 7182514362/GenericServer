@@ -1,5 +1,9 @@
 #include "Buffer.h"
 
+#include <assert.h>
+#include <unistd.h>
+#include <string.h>
+
 using namespace generic;
 
 int BufferBase::append(const char *buf, int len)
@@ -35,6 +39,12 @@ int BufferBase::append(const char c_)
     return 0;
 }
 
+void BufferBase::bzero()
+{
+    clear();
+    memset(m_data, 0, (int)(m_end - m_data));
+}
+
 // from system kernel buffer
 int BufferBase::read_in(int fd)
 {
@@ -67,4 +77,20 @@ int BufferBase::write_out(int fd)
         }
     }
     return n;
+}
+
+#define MAX_SIZE (1 << 22)
+char *Buffer::alloc(int size)
+{
+    if (size <= 0 || size >= MAX_SIZE)
+    {
+        return nullptr;
+    }
+    char *p = new char[size];
+    if (!p)
+    {
+        perror("failed to create buffer");
+        abort();
+    }
+    return p;
 }

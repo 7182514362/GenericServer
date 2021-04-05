@@ -1,7 +1,6 @@
 #ifndef EVENTLOOP_THREAD_POOL_H
 #define EVENTLOOP_THREAD_POOL_H
 
-#include "EventLoop.h"
 #include "EventLoopThread.h"
 
 #include <thread>
@@ -9,22 +8,20 @@
 #include <memory>
 #include <functional>
 
-// using std::thread
+
 namespace generic
 {
+    class EventLoop;
+
     class EventLoopThreadPool
     {
         using EventLoopPtr = std::shared_ptr<EventLoop>;
-        using EventLoopThreadPtr = std::unique_ptr<EventLoopThread>;
+        using EventLoopThreadUniquePtr = std::unique_ptr<EventLoopThread>;
 
     public:
         EventLoopThreadPool(int num = std::thread::hardware_concurrency());
 
-        ~EventLoopThreadPool()
-        {
-            stop();
-            join();
-        }
+        ~EventLoopThreadPool();
 
         void start();
 
@@ -38,33 +35,12 @@ namespace generic
             return m_loops[m_nextLoop];
         }
 
-        EventLoopPtr &operator[](int num)
-        {
-            assert(num < m_nthreads && num >= 0);
-            return m_loops[num];
-        }
+        const EventLoopPtr &operator[](int num);
 
         std::vector<EventLoopPtr> &getAllLoop()
         {
             return m_loops;
         }
-
-        /*
-        void runInLoopThread(EventLoopPtr loop, std::function<void()> func)
-        {
-            loop->addPending(func);
-            loop->wakeup();
-        }
-
-        void runInAllLoopThread(std::function<void()> func)
-        {
-            for (auto &loop : m_loops)
-            {
-                loop->addPending(func);
-                loop->wakeup();
-            }
-        }
-        */
 
         int numOfThreads() const
         {
@@ -75,7 +51,7 @@ namespace generic
         int m_nthreads;
         int m_nextLoop;
 
-        std::vector<EventLoopThreadPtr> m_threads;
+        std::vector<EventLoopThreadUniquePtr> m_threads;
         std::vector<EventLoopPtr> m_loops;
         //std::map<const int, EventLoopPtr> m_loopMap;
     };

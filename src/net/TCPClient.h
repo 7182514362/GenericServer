@@ -6,7 +6,10 @@
 #include "InetAddress.h"
 #include "TCPConnection.h"
 #include "Connector.h"
+#include "Socket.h"
+#include "Log.h"
 
+#include <assert.h>
 #include <unordered_map>
 
 namespace generic
@@ -17,24 +20,29 @@ namespace generic
         using EventLoopPtr = std::shared_ptr<EventLoop>;
         using TCPConnectionPtr = std::shared_ptr<TCPConnection>;
         using EventLoopThreadPtr = std::shared_ptr<EventLoopThread>;
+        using InetAddressPtr = std::shared_ptr<InetAddress>;
 
     public:
-        TCPClient(InetAddress addr) : m_loop(std::make_shared<EventLoop>()),
-                                      m_loopThread(std::make_shared<EventLoopThread>(m_loop)),
-                                      m_serverAddr(addr),
-                                      m_conns(),
-                                      m_connector(new Connector(addr, m_loop))
+        TCPClient(InetAddress &addr) : m_loop(std::make_shared<EventLoop>()),
+                                       m_loopThread(std::make_shared<EventLoopThread>(m_loop)),
+                                       m_serverAddr(addr),
+                                       m_conns(),
+                                       m_connector(new Connector(InetAddressPtr(&addr), m_loop))
         {
             assert(m_loop != nullptr);
             assert(m_connector != nullptr);
 
-            m_connector->setNewConnectionCallback(std::bind(&TCPClient::connected, this, std::placeholders::_1));
+            m_connector->setSuccessCallback(std::bind(&TCPClient::connected, this, std::placeholders::_1));
+            m_connector->setFailedCallback(
+                []() {
+                    LOG_INFO << "Failed to connect to peer";
+                });
             m_loopThread->start();
         }
 
         void connect()
         {
-            m_connector->connect();
+            m_connector->startConnect();
         }
 
         void disconnect()

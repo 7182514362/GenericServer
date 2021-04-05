@@ -1,7 +1,21 @@
 #include "LogFile.h"
-#include <cstring>
+#include <assert.h>
+#include <string.h>
 
 using namespace generic;
+
+LogFile::LogFile() : m_file(new FileUtil(genFileName(), LOGFILE_SIZE)), m_time()
+{
+    m_file->open();
+}
+LogFile::LogFile(std::string name) : m_file(new FileUtil(name, LOGFILE_SIZE)), m_time()
+{
+    m_file->open();
+}
+LogFile::~LogFile()
+{
+    m_file->close();
+}
 
 std::string LogFile::genFileName()
 {
@@ -33,6 +47,11 @@ void LogFile::append(const char *data, int len)
         m_file->open();
         m_file->write(data, len);
     }
+}
+
+bool LogFile::exist(std::string &filename) const
+{
+    return m_file->exist();
 }
 
 void LogConsole::append(const char *data, int len)

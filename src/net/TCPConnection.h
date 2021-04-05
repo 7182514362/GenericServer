@@ -4,17 +4,28 @@
 #include "Noncopyable.h"
 #include "InetAddress.h"
 #include "Event.h"
-#include "EventLoop.h"
-#include "Buffer.h"
-#include "Socket.h"
-#include "IdleConnections.h"
-#include "Timer.h"
+//#include "EventLoop.h"
+//#include "Buffer.h"
+//#include "Socket.h"
+//#include "IdleConnections.h"
+//#include "Timer.h"
 
 #include <mutex>
 #include <vector>
+#include <memory>
+#include <functional>
+
 
 namespace generic
 {
+
+    class IdleConnections;
+    class IdleConnectionEntry;
+    class EventLoop;
+    class Buffer;
+    class SocketOP;
+    class TimerEntry;
+
     class TCPConnection : Noncopyable, public std::enable_shared_from_this<TCPConnection>
     {
 #define BUFFER_SIZE (1 << 20)
@@ -27,67 +38,26 @@ namespace generic
         using Callback = std::function<void(TCPConnectionPtr)>;
 
     public:
-        TCPConnection(int fd, InetAddress &addr, EventLoopPtr loop)
-            : m_peerAddr(addr),
-              m_loop(loop),
-              m_event(fd),
-              m_rbuf(std::make_shared<Buffer>(BUFFER_SIZE)),
-              m_wbuf(std::make_shared<Buffer>(BUFFER_SIZE)),
-              m_entry(),
-              m_timerList()
-        {
-            m_event.setReadCallback(std::bind(&TCPConnection::handleRead, this));
-            m_event.setWriteCallback(std::bind(&TCPConnection::handleWrite, this));
-            m_event.setCloseCallback(std::bind(&TCPConnection::handleClose, this));
-            m_event.setErrorCallback(std::bind(&TCPConnection::handleError, this));
-
-            m_event.enableRead();
-        }
+        TCPConnection(int fd, InetAddress &addr, EventLoopPtr loop);
 
         ~TCPConnection()
         {
         }
 
-        void init()
-        {
-            m_loop->runInLoop(
-                [this]() {
-                    if (m_connectedCallback)
-                    {
-                        m_connectedCallback(shared_from_this());
-                    }
-                    m_loop->addEvent(&m_event);
-                });
-        }
+        void init();
 
-        void shutdown()
-        {
-            LOG_TRACE << "TCPConnection::shutdown";
-            stopPollEvent();
-            if (m_closeCallback)
-                m_closeCallback(shared_from_this());
-            SocketOP::close(getFd());
-        }
+        void shutdown();
 
-        void startPollEvent()
-        {
-            m_loop->addEvent(&m_event);
-        }
+        void startPollEvent();
 
-        void stopPollEvent()
-        {
-            m_loop->removeEvent(&m_event);
-        }
+        void stopPollEvent();
 
         EventLoopPtr &getEventLoop()
         {
             return m_loop;
         }
 
-        int getFd() const
-        {
-            return m_event.fd();
-        }
+        int getFd() const;
 
         void setConnectedCallback(Callback cb)
         {
@@ -111,7 +81,7 @@ namespace generic
 
         const InetAddress &getPeerAddr() const
         {
-            return m_peerAddr;
+            return m_peer;
         }
 
         void addTask(std::function<void()> f, int ms, bool repeat);
@@ -146,28 +116,15 @@ namespace generic
         void handleError();
 
         // called in m_loop's thread
-        void addToLoop()
-        {
-            LOG_TRACE << "TCPConnection::addToLoop";
-            m_loop->addEvent(&m_event);
-        }
+        void addToLoop();
 
-        /*
-        // actively close conn
-        void removeFromLoop()
-        {
-            LOG_TRACE << "TCPConnection::removeFromLoop";
-            m_loop->removeEvent(&m_event);
-        }
+        bool operator==(const TCPConnection &conn) const;
 
-        void updateEvent()
-        {
-            m_loop->modifyEvent(&m_event);
-        }
-        */
+        static size_t connection_hash(const TCPConnection &conn);
 
     private:
-        const InetAddress m_peerAddr;
+        const InetAddress m_local;
+        const InetAddress m_peer;
         EventLoopPtr m_loop;
         Event m_event;
 

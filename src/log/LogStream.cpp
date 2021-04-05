@@ -1,6 +1,10 @@
 #include "LogStream.h"
 
+#include <string.h>
+
 using namespace generic;
+
+#define MAX_LEN (1 << 10)
 
 LogStream &LogStream::operator<<(const char c_)
 {
@@ -11,7 +15,7 @@ LogStream &LogStream::LogStream::operator<<(const char *str_)
 {
     if (str_)
     {
-        m_buffer.append(str_, strlen(str_));
+        m_buffer.append(str_, strnlen(str_, MAX_LEN));
     }
     return *this;
 }

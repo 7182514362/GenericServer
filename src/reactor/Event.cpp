@@ -1,6 +1,28 @@
 #include "Event.h"
+#include "Log.h"
+
+#include <sys/epoll.h>
+#include <sys/eventfd.h>
+#include <unistd.h>
 
 using namespace generic;
+
+Event::Event(int fd) : m_fd(fd), m_events(0), m_revents(0), m_polling(false) {}
+
+void Event::enableRead()
+{
+    m_events |= (EPOLLIN | EPOLLPRI);
+}
+
+void Event::enableWrite(bool on)
+{
+    m_events = (on) ? (m_events | EPOLLOUT) : (m_events & (~EPOLLOUT));
+}
+
+void Event::enableET()
+{
+    m_events |= EPOLLET;
+}
 
 void Event::handleEvent()
 {
@@ -64,4 +86,10 @@ void Event::reset(int fd)
     m_writeCallback = nullptr;
     m_closeCallback = nullptr;
     m_errorCallback = nullptr;
+}
+
+void Event::close()
+{
+    ::close(m_fd);
+    m_fd = -1;
 }

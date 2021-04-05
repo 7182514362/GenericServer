@@ -1,6 +1,36 @@
 #include "EventLoop.h"
+#include "Poller.h"
+#include "EPollPoller.h"
+#include "Util.h"
+#include "Log.h"
+#include "SystemTimer.h"
+#include "Timer.h"
+
+#include <sys/eventfd.h>
 
 using namespace generic;
+
+#define TIMER_INTERVAL (1000)
+EventLoop::EventLoop() : m_threadId(CurrentThread::tid()),
+                         m_quit(false),
+                         m_poller(new EPollPoller()),
+                         m_activeEvents(),
+                         m_wakeup(Event::createEventfd()),
+                         m_sysTimer(new SysTimer()),
+                         m_timerWheel(new TimingWheel(TIMER_INTERVAL)),
+                         m_pendingMutex(),
+                         m_pending()
+{
+    m_wakeup.setReadCallback(std::bind(&EventLoop::handleWakeup, this));
+    m_wakeup.enableRead();
+    m_poller->registerEvent(&m_wakeup);
+
+    m_sysTimer->setInterval(TIMER_INTERVAL);
+    m_sysTimer->setExpireCallback(std::bind(&TimingWheel::tick, m_timerWheel.get()));
+    m_poller->registerEvent(m_sysTimer->event());
+}
+
+EventLoop::~EventLoop() {}
 
 void EventLoop::loop()
 {

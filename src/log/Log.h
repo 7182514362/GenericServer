@@ -1,13 +1,8 @@
 #ifndef LOG_H
 #define LOG_H
 
-#include "Appender.h"
-#include "Buffer.h"
-#include "LogStream.h"
 #include "Noncopyable.h"
-#include "RingBuffer.h"
-#include "Singleton.h"
-#include "Util.h"
+#include "LogStream.h"
 #include "LoggerBase.h"
 
 #include <atomic>
@@ -17,6 +12,12 @@
 
 namespace generic
 {
+    class Appender;
+    class Buffer;
+    template <int N>
+    class FixedBuffer;
+    class RingBuffer;
+    class SimpleString;
 
 #define SYNCLOGGER_BUFFER_SIZE (1 << 10)
     class SyncLogger : public LoggerBase
@@ -65,7 +66,7 @@ namespace generic
     class Logger
     {
     private:
-        static std::map<LogLevel, std::string> s_logLevelName;
+        static std::map<LogLevel, SimpleString> s_logLevelName;
         static bool s_showTimeStamp;
         // is static necessary?
         static thread_local std::shared_ptr<LoggerBase> s_logger;

@@ -1,11 +1,7 @@
 #ifndef EVENT_H
 #define EVENT_H
 
-#include "Log.h"
-
 #include <functional>
-#include <sys/epoll.h>
-#include <sys/eventfd.h>
 
 namespace generic
 {
@@ -14,11 +10,7 @@ namespace generic
         using EventHandler = std::function<void()>;
 
     public:
-        Event(int fd) : m_fd(fd), m_events(0), m_revents(0), m_polling(false) {}
-        ~Event()
-        {
-            ::close(m_fd);
-        }
+        Event(int fd);
 
         void setReadCallback(EventHandler cb) { m_readCallback = std::move(cb); }
         void setWriteCallback(EventHandler cb) { m_writeCallback = std::move(cb); }
@@ -28,25 +20,17 @@ namespace generic
         void handleEvent();
 
         int fd() const { return m_fd; }
+        void close();
         int events() const { return m_events; }
         int revents() const { return m_revents; }
         void set_revents(int e) { m_revents = e; }
         void reset(int fd);
 
-        void enableRead()
-        {
-            m_events |= (EPOLLIN | EPOLLPRI);
-        }
+        void enableRead();
 
-        void enableWrite(bool on)
-        {
-            m_events = (on) ? (m_events | EPOLLOUT) : (m_events & (~EPOLLOUT));
-        }
+        void enableWrite(bool on);
 
-        void enableET()
-        {
-            m_events |= EPOLLET;
-        }
+        void enableET();
 
         bool isPolling() const
         {

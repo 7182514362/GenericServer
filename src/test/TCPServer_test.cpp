@@ -25,7 +25,7 @@ int main()
             char temp[64];
             int n = snprintf(temp, 64, "msg from %s: ", conn->getPeerAddr().toString().c_str());
             generic::TCPConnection::BufferPtr buf = conn->getReadBuffer();
-            LOG_INFO << generic::StringWrapper(temp, n) << generic::StringWrapper(buf->read_ptr(), buf->data_size()) << " size: " << buf->data_size();
+            LOG_INFO << generic::SimpleString(temp, n) << generic::SimpleString(buf->read_ptr(), buf->data_size()) << " size: " << buf->data_size();
         });
     server.init();
     server.start();

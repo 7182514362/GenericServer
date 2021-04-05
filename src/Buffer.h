@@ -1,10 +1,9 @@
 #ifndef BUFFER_H
 #define BUFFER_H
 
-#include "Util.h"
 #include "Noncopyable.h"
+#include "StringUtil.h"
 
-#include <string.h>
 #include <string>
 
 namespace generic
@@ -59,13 +58,11 @@ namespace generic
 
         virtual bool empty() const
         {
-            assert(m_rptr <= m_wptr);
             return (m_wptr == m_rptr);
         }
 
         virtual bool full() const
         {
-            assert(m_rptr <= m_wptr);
             return (m_wptr == m_end);
         }
 
@@ -80,15 +77,11 @@ namespace generic
             m_rptr = m_data;
         }
 
-        virtual void bzero()
-        {
-            clear();
-            memset(m_data, 0, (int)(m_end - m_data));
-        }
+        virtual void bzero();
 
-        StringWrapper toString() const
+        SimpleString toString() const
         {
-            return StringWrapper(m_rptr, data_size());
+            return SimpleString(m_rptr, data_size());
         }
 
         // from system kernel buffer
@@ -122,25 +115,13 @@ namespace generic
 
     class Buffer : public BufferBase
     {
-#define MAX_SIZE (1 << 22)
     public:
         Buffer(int size) : BufferBase(alloc(size), size)
         {
         }
 
     private:
-        char *alloc(int size)
-        {
-            assert(size > 0);
-            assert(size <= MAX_SIZE);
-            char *p = new char[size];
-            if (!p)
-            {
-                perror("failed to create buffer");
-                abort();
-            }
-            return p;
-        }
+        char *alloc(int size);
     };
 
 } // namespace generic

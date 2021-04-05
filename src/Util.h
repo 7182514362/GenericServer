@@ -1,16 +1,13 @@
 #ifndef UTIL_H
 #define UTIL_H
 
-#include <assert.h>
 #include <unistd.h>
-#include <cstdio>
+#include <stdio.h>
 
 namespace generic
 {
     template <typename T>
     int convert(char *buf, T value);
-
-#define ASSERT(expr) assert(expr)
 
     class Util
     {
@@ -37,15 +34,6 @@ namespace generic
             }
             return n;
         }
-    };
-
-    class StringWrapper //: Noncopyable
-    {
-    public:
-        StringWrapper(const char *str, int len) : m_str(str), m_len(len) {}
-
-        const char *m_str;
-        const int m_len;
     };
 
 }

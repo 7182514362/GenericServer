@@ -2,13 +2,13 @@
 #define POLLER_H
 
 #include "Noncopyable.h"
-#include "Log.h"
-#include "Event.h"
-
+#include <map>
 #include <vector>
 
 namespace generic
 {
+    class Event;
+    class SimpleString;
 
     class Poller : Noncopyable
     {
@@ -19,7 +19,7 @@ namespace generic
             EPOLL
         };
 
-        static std::map<Type, std::string> s_TypeString;
+        static std::map<Type, SimpleString> s_TypeString;
 
         Poller(Type type, int fd) : m_pollFD(fd), m_pollerType(type)
         {
@@ -27,10 +27,7 @@ namespace generic
 
         virtual void poll(int timeout, std::vector<Event *> &activeEvents) = 0;
 
-        std::string type()
-        {
-            return s_TypeString[m_pollerType];
-        }
+        SimpleString type();
 
     public:
         virtual int createPollerFD() = 0;
@@ -41,31 +38,6 @@ namespace generic
     protected:
         int m_pollFD;
         Type m_pollerType;
-    };
-
-    class EPollPoller : public Poller
-    {
-
-    public:
-        EPollPoller() : Poller(Poller::Type::EPOLL, createPollerFD()), m_events(16) {}
-
-        void poll(int timeoutms, std::vector<Event *> &activeEvents) override;
-
-        void registerEvent(const Event *e) override;
-
-        void removeEvent(const Event *e) override;
-
-        void modifyEvent(Event *e) override;
-
-    private:
-        int createPollerFD() override;
-
-        void updateEvent(const Event *e, int op);
-
-        StringWrapper opstring(int op);
-
-    private:
-        std::vector<struct epoll_event> m_events;
     };
 }
 

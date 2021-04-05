@@ -1,30 +1,24 @@
 #ifndef TCPSERVER_H
 #define TCPSERVER_H
 
-#include <cstdio>
-#include <functional>
-#include <unordered_map>
-#include <map>
-
-#include "EventLoop.h"
+#include "Noncopyable.h"
 #include "EventLoopThreadPool.h"
 #include "InetAddress.h"
 #include "Acceptor.h"
-#include "Noncopyable.h"
-#include "IdleConnections.h"
-#include "TCPConnection.h"
-#include "Time.h"
 #include "Config.h"
+#include <memory>
+#include <functional>
+#include <unordered_map>
 
 namespace generic
 {
+	class TCPConnection;
 
 	class TCPServer : Noncopyable
 	{
 		using EventLoopPtr = std::shared_ptr<EventLoop>;
 		using TCPConnectionPtr = std::shared_ptr<TCPConnection>;
 		using TCPConnectionWeakPtr = std::weak_ptr<TCPConnection>;
-		using IdleConnsPtr = std::shared_ptr<IdleConnections>;
 
 	public:
 		std::function<void(TCPConnectionPtr)> m_connectionCallback;
@@ -62,8 +56,6 @@ namespace generic
 
 		// file descriptor to conns
 		std::unordered_map<int, TCPConnectionPtr> m_connMap;
-		// thread id to idle conns, one idle Conns per loop thread
-		//std::map<const int, IdleConnsPtr> m_idleConnsMap;
 		std::unique_ptr<EventLoopThreadPool> m_pool;
 	};
 } // namespace generic

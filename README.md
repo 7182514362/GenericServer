@@ -15,6 +15,4 @@ This project is made in order to learn linux programming, the basic concept and 
 ### Application Layer Keepalive
     todo
 ### TODO
-    mysql,HTTP/1.1,
-### Advanced
-    redis
+    mysql, HTTP/1.1, DB connection, zero copy...

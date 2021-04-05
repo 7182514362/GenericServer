@@ -15,5 +15,3 @@ include_directories(${PROJECT_SOURCE_DIR}/src/log)
 
 add_library(log ${log_srcs})
 target_link_libraries(log base)
-
-add_subdirectory(test)

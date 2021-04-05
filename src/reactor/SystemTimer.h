@@ -1,10 +1,10 @@
 #ifndef SYSTEM_TIMER_H
 #define SYSTEM_TIMER_H
 
-#include <unistd.h>
-
-#include "Event.h"
 #include "Noncopyable.h"
+#include "Event.h"
+#include <sys/timerfd.h>
+#include <functional>
 
 namespace generic
 {

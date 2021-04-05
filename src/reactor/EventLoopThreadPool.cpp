@@ -1,4 +1,10 @@
 #include "EventLoopThreadPool.h"
+#include "EventLoop.h"
+#include "Log.h"
+
+#include <assert.h>
+#include <unistd.h>
+
 using namespace generic;
 
 EventLoopThreadPool::EventLoopThreadPool(int num)
@@ -15,8 +21,14 @@ EventLoopThreadPool::EventLoopThreadPool(int num)
     assert(m_threads.empty() == true);
     for (int i = 0; i < num; ++i)
     {
-        m_threads.push_back(EventLoopThreadPtr(new EventLoopThread(m_loops[i])));
+        m_threads.push_back(EventLoopThreadUniquePtr(new EventLoopThread(m_loops[i])));
     }
+}
+
+EventLoopThreadPool::~EventLoopThreadPool()
+{
+    stop();
+    join();
 }
 
 void EventLoopThreadPool::start()
@@ -50,4 +62,13 @@ void EventLoopThreadPool::join()
     {
         thread->join();
     }
+}
+
+const std::shared_ptr<EventLoop> &EventLoopThreadPool::operator[](int num)
+{
+    if (num >= m_nthreads || num < 0)
+    {
+        return *m_loops.end();
+    }
+    return m_loops[num];
 }

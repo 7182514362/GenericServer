@@ -1,6 +1,29 @@
 #include "InetAddress.h"
+#include "Socket.h"
+#include "Log.h"
+
+#include <arpa/inet.h>
+#include <string.h>
+#include <assert.h>
+
+//#include <stdint.h>
+//#include <endian.h>
+//#include <cstring>
 
 using namespace generic;
+
+InetAddress::InetAddress(const struct sockaddr_in6 &addr)
+{
+    memset(&m_addr6, 0, sizeof(m_addr6));
+    if (addr.sin6_family == AF_INET6)
+    {
+        memcpy(&m_addr6, &addr, sizeof(struct sockaddr_in6));
+    }
+    else if (addr.sin6_family == AF_INET)
+    {
+        memcpy(&m_addr4, &addr, sizeof(struct sockaddr_in));
+    }
+}
 
 InetAddress::InetAddress(int port, bool ipv6)
 {
@@ -22,7 +45,7 @@ InetAddress::InetAddress(int port, bool ipv6)
     }
 }
 
-void InetAddress::setAddr(std::string ip, int port, bool ipv6)
+void InetAddress::setAddr(const std::string &ip, int port, bool ipv6)
 {
     if (ipv6)
     {
@@ -32,6 +55,40 @@ void InetAddress::setAddr(std::string ip, int port, bool ipv6)
     {
         textToIP4(ip.c_str(), port);
     }
+}
+
+bool InetAddress::operator==(const InetAddress &addr) const
+{
+    bool b;
+    if (m_addr6.sin6_family == AF_INET)
+    {
+        b = (m_addr4.sin_family == addr.m_addr4.sin_family) &&
+            (m_addr4.sin_port == addr.m_addr4.sin_port) &&
+            (m_addr4.sin_addr.s_addr == addr.m_addr4.sin_addr.s_addr);
+    }
+    else
+    {
+        b = (m_addr6.sin6_family == addr.m_addr6.sin6_family) &&
+            (m_addr6.sin6_port == addr.m_addr6.sin6_port) &&
+            (memcmp(&m_addr6.sin6_addr, &addr.m_addr6.sin6_addr, sizeof(struct in6_addr)));
+    }
+
+    return b;
+}
+
+size_t InetAddress::hash() const
+{
+    int addr_len =
+        (m_addr6.sin6_family == AF_INET) ? sizeof(m_addr4.sin_addr) : sizeof(m_addr6.sin6_addr);
+    unsigned long *p =
+        (m_addr6.sin6_family == AF_INET) ? (unsigned long *)&m_addr4.sin_addr.s_addr : (unsigned long *)&m_addr6.sin6_addr;
+    size_t h = 0xFFFFFFFF;
+    for (int i = 0; i < addr_len / sizeof(int); ++i)
+    {
+        h ^ std::hash<int>()(p[i]);
+    }
+    h + m_addr6.sin6_port;
+    return h;
 }
 
 std::string InetAddress::toString() const
@@ -74,7 +131,7 @@ void InetAddress::textToIP6(const char *ip, int port)
     }
     else if (ret < 0)
     {
-        LOG_ERROR << "inet_pton" << strerror(errno);
+        LOG_ERROR << "inet_pton: " << strerror(errno);
     }
 }
 

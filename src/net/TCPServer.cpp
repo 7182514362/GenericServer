@@ -1,27 +1,18 @@
 #include "TCPServer.h"
+#include "TCPConnection.h"
+#include "EventLoop.h"
+#include "Log.h"
 
 using namespace generic;
-/*
-TCPServer::TCPServer(const InetAddress &listenAddr, int nWorkers)
-	: m_listenAddr(listenAddr),
+
+TCPServer::TCPServer(Config &config)
+	: m_config(config),
+	  m_listenAddr(config.ip, config.port, config.use_ipv6),
 	  m_loop(std::make_shared<EventLoop>()),
 	  m_acceptor(m_loop, m_listenAddr,
 				 std::bind(&TCPServer::onNewConnection, this, std::placeholders::_1, std::placeholders::_2)),
 	  m_connMap(),
-	  m_pool(),
-	  m_idleConnsMap()
-{
-	init(nWorkers);
-}
-*/
-
-TCPServer::TCPServer(Config &config) : m_config(config),
-									   m_listenAddr(config.ip, config.port, config.use_ipv6),
-									   m_loop(std::make_shared<EventLoop>()),
-									   m_acceptor(m_loop, m_listenAddr,
-												  std::bind(&TCPServer::onNewConnection, this, std::placeholders::_1, std::placeholders::_2)),
-									   m_connMap(),
-									   m_pool()
+	  m_pool()
 {
 	//init(config.work_thread_num);
 }

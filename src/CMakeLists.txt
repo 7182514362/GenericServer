@@ -16,4 +16,5 @@ target_link_libraries(base pthread)
 add_subdirectory(log)
 add_subdirectory(reactor)
 add_subdirectory(net)
+add_subdirectory(test)
 

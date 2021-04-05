@@ -1,7 +1,10 @@
 #ifndef ECHO_SERVER_H
 #define ECHO_SERVER_H
 
+#include "Log.h"
+#include "Timer.h"
 #include "TCPServer.h"
+#include "EventLoop.h"
 #include "TCPConnection.h"
 #include "IdleConnections.h"
 #include <map>

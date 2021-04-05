@@ -1,4 +1,9 @@
 #include "EventLoopThread.h"
+#include "EventLoop.h"
+#include "CurrentThread.h"
+
+#include <assert.h>
+
 using namespace generic;
 
 void EventLoopThread::start(std::function<void()> pre, std::function<void()> post)

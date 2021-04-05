@@ -1,9 +1,15 @@
 #include "Log.h"
 #include "Util.h"
+#include "Buffer.h"
+#include "Appender.h"
+#include "RingBuffer.h"
 #include "CurrentThread.h"
+#include "StringUtil.h"
 
 #include <functional>
 #include <string>
+#include <string.h>
+#include <assert.h>
 #include <fcntl.h>
 #include <unistd.h>
 
@@ -96,10 +102,12 @@ void AsyncLogger::append(const char *data, int size)
 // run in thread
 void AsyncLogger::threadFunc()
 {
-    int buffer_size = 1 << 20;
+    int buffer_size = 1 << 16;
     char *buffer = new char[buffer_size];
-    int highWaterMark = buffer_size - 1024;
+    int highWaterMark = buffer_size - 2048;
+    int lowWaterMark = 2048;
     memset(buffer, 0, buffer_size);
+    Time time;
 
     int n = 0;
     while (m_running)
@@ -116,10 +124,15 @@ void AsyncLogger::threadFunc()
                 }
             }
         }
-        m_appender->append(buffer, n);
-        n = 0;
+        // hold logs no longer than 2 seconds
+        if (n > lowWaterMark || Time::distance_from_now_sec(time) > 2)
+        {
+            m_appender->append(buffer, n);
+            n = 0;
+            time.update();
+        }
     }
-    // flush
+    // write out remaining logs
     for (auto &buf : *m_bufferMap)
     {
         while (!buf.second->empty())
@@ -140,13 +153,13 @@ void AsyncLogger::threadFunc()
 
 /**************** Logger start ****************/
 
-std::map<LogLevel, std::string> Logger::s_logLevelName = {
-    {LogLevel::TRACE, "TRACE "},
-    {LogLevel::DEBUG, "DEBUG "},
-    {LogLevel::INFO, " INFO "},
-    {LogLevel::WARN, " WARN "},
-    {LogLevel::ERROR, "ERROR "},
-    {LogLevel::FATAL, "FATAL "}};
+std::map<LogLevel, SimpleString> Logger::s_logLevelName = {
+    {LogLevel::TRACE, SimpleString("TRACE ", 6)},
+    {LogLevel::DEBUG, SimpleString("DEBUG ", 6)},
+    {LogLevel::INFO, SimpleString(" INFO ", 6)},
+    {LogLevel::WARN, SimpleString(" WARN ", 6)},
+    {LogLevel::ERROR, SimpleString("ERROR ", 6)},
+    {LogLevel::FATAL, SimpleString("FATAL ", 6)}};
 
 // static
 LogLevel Logger::logLevel = LogLevel::INFO;
@@ -180,10 +193,10 @@ void Logger::format(LogLevel level)
     if (s_showTimeStamp)
     {
         Time time;
-        n = time.toFormatString(time, buf, 64);
+        n = time.format_string(time, buf, 64);
         buf[n++] = ' ';
     }
-    m_stream << StringWrapper(buf, n) << CurrentThread::tid() << " " << s_logLevelName[level];
+    m_stream << SimpleString(buf, n) << CurrentThread::tid() << " " << s_logLevelName[level];
 }
 
 /**************** Logger   end ****************/

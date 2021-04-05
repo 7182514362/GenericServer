@@ -1,13 +1,12 @@
 #ifndef EVENTLOOP_THREAD_H
 #define EVENTLOOP_THREAD_H
 
-#include "EventLoop.h"
-
 #include <thread>
 #include <functional>
 
 namespace generic
 {
+    class EventLoop;
 
     class EventLoopThread
     {

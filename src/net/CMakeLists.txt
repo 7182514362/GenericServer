@@ -18,5 +18,3 @@ include_directories(${PROJECT_SOURCE_DIR}/src/reactor)
 
 add_library(net ${SRCS})
 target_link_libraries(net base log reactor)
-
-add_subdirectory(test)

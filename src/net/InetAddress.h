@@ -1,16 +1,7 @@
 #ifndef INET_ADDRESS_H
 #define INET_ADDRESS_H
 
-#include "Log.h"
-
-#include <netdb.h>
 #include <netinet/in.h>
-#include <arpa/inet.h>
-
-//#include <arpa/inet.h>
-#include <stdint.h>
-#include <endian.h>
-#include <cstring>
 #include <string>
 
 namespace generic
@@ -25,23 +16,28 @@ namespace generic
         };
 
     public:
-        InetAddress() = default;
+        InetAddress(const struct sockaddr_in6 &addr);
+        
         InetAddress(int port, bool ipv6);
 
-        InetAddress(std::string ip, int port, bool ipv6)
+        InetAddress(const std::string& ip, int port, bool ipv6)
         {
             setAddr(ip, port, ipv6);
         }
 
-        InetAddress(const sockaddr_in &addr) : m_addr4(addr) {}
-        InetAddress(const sockaddr_in6 &addr) : m_addr6(addr) {}
-
-        void setAddr(std::string ip, int port, bool ipv6);
+        void setAddr(const std::string& ip, int port, bool ipv6);
 
         const struct sockaddr *getAddr() const
         {
             return (const struct sockaddr *)(&m_addr6);
         }
+
+        bool isIpv6() const
+        {
+            return m_addr6.sin6_family == AF_INET6;
+        }
+
+        bool operator==(const InetAddress &addr) const;
 
         sa_family_t family() const
         {
@@ -49,6 +45,8 @@ namespace generic
         }
 
         std::string toString() const;
+
+        size_t hash() const;
 
     private:
         void textToIP4(const char *ip, int port);

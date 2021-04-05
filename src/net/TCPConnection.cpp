@@ -1,6 +1,68 @@
 #include "TCPConnection.h"
+#include "Log.h"
+#include "InetAddress.h"
+#include "Event.h"
+#include "EventLoop.h"
+#include "Buffer.h"
+#include "Socket.h"
+#include "IdleConnections.h"
+#include "Timer.h"
 
 using namespace generic;
+
+TCPConnection::TCPConnection(int fd, InetAddress &addr, EventLoopPtr loop)
+    : m_local(SocketOP::getLocalAddr(fd)),
+      m_peer(addr),
+      m_loop(loop),
+      m_event(fd),
+      m_rbuf(std::make_shared<Buffer>(BUFFER_SIZE)),
+      m_wbuf(std::make_shared<Buffer>(BUFFER_SIZE)),
+      m_entry(),
+      m_timerList()
+{
+    m_event.setReadCallback(std::bind(&TCPConnection::handleRead, this));
+    m_event.setWriteCallback(std::bind(&TCPConnection::handleWrite, this));
+    m_event.setCloseCallback(std::bind(&TCPConnection::handleClose, this));
+    m_event.setErrorCallback(std::bind(&TCPConnection::handleError, this));
+
+    m_event.enableRead();
+}
+
+void TCPConnection::init()
+{
+    m_loop->runInLoop(
+        [this]() {
+            if (m_connectedCallback)
+            {
+                m_connectedCallback(shared_from_this());
+            }
+            m_loop->addEvent(&m_event);
+        });
+}
+
+void TCPConnection::shutdown()
+{
+    LOG_TRACE << "TCPConnection::shutdown";
+    stopPollEvent();
+    if (m_closeCallback)
+        m_closeCallback(shared_from_this());
+    SocketOP::close(getFd());
+}
+
+void TCPConnection::startPollEvent()
+{
+    m_loop->addEvent(&m_event);
+}
+
+void TCPConnection::stopPollEvent()
+{
+    m_loop->removeEvent(&m_event);
+}
+
+int TCPConnection::getFd() const
+{
+    return m_event.fd();
+}
 
 void TCPConnection::sendMsg(const char *msg, int len)
 {
@@ -77,7 +139,7 @@ void TCPConnection::handleClose()
     // clear revents !!!
     m_event.set_revents(0);
     m_loop->removeEvent(&m_event);
-
+    m_event.close();
     // disable all timers
     for (auto &timer : m_timerList)
     {
@@ -95,4 +157,20 @@ void TCPConnection::handleError()
 {
     LOG_TRACE << "TCPConnection::handleError";
     handleClose();
+}
+
+void TCPConnection::addToLoop()
+{
+    LOG_TRACE << "TCPConnection::addToLoop";
+    m_loop->addEvent(&m_event);
+}
+
+bool TCPConnection::operator==(const TCPConnection &conn) const
+{
+    return m_local == m_peer;
+}
+
+size_t TCPConnection::connection_hash(const TCPConnection &conn)
+{
+    return conn.m_local.hash() + conn.m_peer.hash();
 }

@@ -3,7 +3,7 @@
 
 #include "Noncopyable.h"
 #include "Buffer.h"
-#include "Util.h"
+#include "StringUtil.h"
 
 #include <memory>
 
@@ -22,7 +22,7 @@ namespace generic
 
         LogStream &operator<<(const char);
         LogStream &operator<<(const char *);
-        LogStream &operator<<(StringWrapper &&str_)
+        LogStream &operator<<(const SimpleString &str_)
         {
             m_buffer.append(str_.m_str, str_.m_len);
             return *this;

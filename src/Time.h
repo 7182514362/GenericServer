@@ -1,8 +1,8 @@
 #ifndef TIME_H
 #define TIME_H
 
-#include <ctime>
 #include "Util.h"
+#include <time.h>
 
 namespace generic
 {
@@ -16,7 +16,9 @@ namespace generic
 
         void update();
 
-        static int toFormatString(Time &time, char *buf, int maxlen);
+        static long distance_from_now_sec(const Time& t);
+
+        static int format_string(Time &time, char *buf, int maxlen);
         //static int toFormatString(Time &time, Buffer* buf);
 
     public:
